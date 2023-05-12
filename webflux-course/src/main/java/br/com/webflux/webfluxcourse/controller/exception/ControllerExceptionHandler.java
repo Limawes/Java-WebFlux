@@ -3,8 +3,10 @@ package br.com.webflux.webfluxcourse.controller.exception;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.support.WebExchangeBindException;
 import reactor.core.publisher.Mono;
 
 import static java.time.LocalDateTime.now;
@@ -24,10 +26,25 @@ public class ControllerExceptionHandler {
                                 .status(BAD_REQUEST.value())
                                 .error(BAD_REQUEST.getReasonPhrase())
                                 .message(verifyDupKey(ex.getMessage()))
-                                .path(request.getURI().getPath())
+                                .path(request.getURI().getPath().toString())
                                 .build()
 
                 ));
+    }
+
+    @ExceptionHandler(WebExchangeBindException.class)
+    public ResponseEntity<Mono<ValidationError>> validationError(
+            WebExchangeBindException ex, ServerHttpRequest request
+    ){
+        ValidationError error = new ValidationError(
+            now(), request.getURI().getPath(),
+                BAD_REQUEST.value(), "Validation error", "Error on validation attributes"
+        );
+
+        for(FieldError x : ex.getBindingResult().getFieldErrors()){
+            error.addError(x.getField(), x.getDefaultMessage());
+        }
+        return ResponseEntity.status(BAD_REQUEST).body(Mono.just(error));
     }
 
     private String verifyDupKey(String message) {

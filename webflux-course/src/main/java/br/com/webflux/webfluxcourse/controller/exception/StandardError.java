@@ -7,8 +7,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-@Builder
 @Data
+@Builder
 public class StandardError implements Serializable {
     @Serial
     private static final Long serialVersionUID = 1L;
